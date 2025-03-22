@@ -1,6 +1,4 @@
 ﻿
-using Catalog.API.Products.GetProducts;
-
 namespace Catalog.API.Products.UpdateProduct
 {
     public record UpdateProductCommand(Guid Id, string Name, List<string> Category, string Description, string ImageFile, decimal Price)
@@ -8,11 +6,11 @@ namespace Catalog.API.Products.UpdateProduct
 
     public record UpdateProductResult(bool IsSuccess);
 
-    internal class UpdateProductHandler(IDocumentSession session, ILogger<GetProductsQueryHandler> logger) : ICommandHandler<UpdateProductCommand, UpdateProductResult>
+    internal class UpdateProductCommandHandler(IDocumentSession session, ILogger<UpdateProductCommandHandler> logger) : ICommandHandler<UpdateProductCommand, UpdateProductResult>
     {
         public async Task<UpdateProductResult> Handle(UpdateProductCommand command, CancellationToken cancellationToken)
         {
-            logger.LogInformation("GetProducts QueryHandler.Handle called with {@Query}", command);
+            logger.LogInformation("UpdateProductHandler.Handle called with {@Сommand}", command);
 
             var product = await session.LoadAsync<Product>(command.Id, cancellationToken);
 
