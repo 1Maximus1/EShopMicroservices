@@ -1,34 +1,40 @@
-﻿
-namespace Catalog.API.Products.CreateProduct
+﻿namespace Catalog.API.Products.CreateProduct
 {
     public record CreateProductCommand(string Name, string Description, string ImageFile, decimal Price, List<string> Category)
         : ICommand<CreateProductResult>;
     public record CreateProductResult(Guid Id);
 
-    internal class CreateProductCommandHandler(IDocumentSession session) 
-        : ICommandHandler<CreateProductCommand, CreateProductResult>
+    public class CreateProductCommandValidator : AbstractValidator<CreateProductCommand>
     {
-        public async Task<CreateProductResult> Handle(CreateProductCommand command, CancellationToken cancellationToken)
+        public CreateProductCommandValidator()
         {
+            RuleFor(x => x.Name).NotEmpty().WithMessage("Name is required");
+            RuleFor(x => x.Category).NotEmpty().WithMessage("Category is required");
+            RuleFor(x => x.ImageFile).NotEmpty().WithMessage("ImageFile is required");
+            RuleFor(x => x.Price).GreaterThan(0).WithMessage("Price is required");
+        }
 
-            //create Product entity from command object 
-            //save to database 
-            //return CreateProductResult result
-
-            var product = new Product
+        internal class CreateProductCommandHandler(IDocumentSession session, ILogger<CreateProductCommandHandler> logger)
+        : ICommandHandler<CreateProductCommand, CreateProductResult>
+        {
+            public async Task<CreateProductResult> Handle(CreateProductCommand command, CancellationToken cancellationToken)
             {
-                Name = command.Name,
-                Category = command.Category,
-                Description = command.Description,
-                ImageFile = command.ImageFile,
-                Price = command.Price
-            };
+                logger.LogInformation("CreateProductCommandHandler.Handle called with {@Command}", command);
 
-            session.Store(product);
-            await session.SaveChangesAsync(cancellationToken);
+                var product = new Product
+                {
+                    Name = command.Name,
+                    Category = command.Category,
+                    Description = command.Description,
+                    ImageFile = command.ImageFile,
+                    Price = command.Price
+                };
 
-            return new CreateProductResult(product.Id);
+                session.Store(product);
+                await session.SaveChangesAsync(cancellationToken);
 
+                return new CreateProductResult(product.Id);
+            }
         }
     }
 }
