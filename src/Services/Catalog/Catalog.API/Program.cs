@@ -20,9 +20,17 @@ builder.Services.AddMarten(opts =>
     //opts.AutoCreateSchemaObjects = Weasel.Core.AutoCreate.CreateOrUpdate;
 }).UseLightweightSessions();
 
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.InitializeMartenWith<CatalogInitialData>();
+}
+
 builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
 
 builder.Services.AddExceptionHandler<CustomExceptionHandler>();
+
+builder.Services.AddHealthChecks()
+    .AddNpgSql(builder.Configuration.GetConnectionString("Database")!);
 
 var app = builder.Build();
 
@@ -30,5 +38,11 @@ var app = builder.Build();
 app.MapCarter();
 
 app.UseExceptionHandler(options => { });
+
+app.MapHealthChecks("/health", 
+    new HealthCheckOptions
+    {
+        ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+    });
 
 app.Run();
