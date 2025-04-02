@@ -1,8 +1,3 @@
-using Basket.API.Data;
-using HealthChecks.UI.Client;
-using JasperFx.Core;
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add sevices to the container

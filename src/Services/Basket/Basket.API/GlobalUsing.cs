@@ -12,3 +12,6 @@ global using Basket.API.Exceptions;
 global using BuildingBlocks.Exceptions.Handler;
 global using Microsoft.Extensions.Caching.Distributed;
 global using System.Text.Json;
+global using HealthChecks.UI.Client;
+global using JasperFx.Core;
+global using Microsoft.AspNetCore.Diagnostics.HealthChecks;
