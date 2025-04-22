@@ -1,6 +1,10 @@
+using Discount.gRPC.Protos;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add sevices to the container
+
+// Application Services
 builder.Services.AddCarter(null, config =>
 {
     var modules = typeof(Program).Assembly.GetTypes().Where(t => t.IsAssignableTo(typeof(ICarterModule))).ToArray();
@@ -14,6 +18,7 @@ builder.Services.AddMediatR(config =>
     config.AddOpenBehavior(typeof(LoggingBehavior<,>));
 });
 
+// Data Services
 builder.Services.AddMarten(opts =>
 {
     opts.Connection(builder.Configuration.GetConnectionString("Database")!);
@@ -22,20 +27,14 @@ builder.Services.AddMarten(opts =>
 }).UseLightweightSessions();
 
 builder.Services.AddScoped<IBasketRepository, BasketRepository>();
-
-builder.Services.AddExceptionHandler<CustomExceptionHandler>();
-
 builder.Services.Decorate<IBasketRepository, CachedBasketRepository>();
+
 
 builder.Services.AddStackExchangeRedisCache(opts =>
 {
     opts.Configuration = builder.Configuration.GetConnectionString("Redis");
 
 });
-
-builder.Services.AddHealthChecks()
-    .AddNpgSql(builder.Configuration.GetConnectionString("Database")!)
-    .AddRedis(builder.Configuration.GetConnectionString("Redis")!);
 
 //builder.Services.AddScoped<IBasketRepository>(provider =>
 //{
@@ -45,11 +44,31 @@ builder.Services.AddHealthChecks()
 //    return new CachedBasketRepository(basketRepository, cache);
 //});
 
+
+// GRPC Services
+builder.Services.AddGrpcClient<DiscountProtoService.DiscountProtoServiceClient>(opts => 
+{
+    opts.Address = new Uri(builder.Configuration["GrpcSettings:DiscountUrl"]!);
+}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+{
+    ServerCertificateCustomValidationCallback =
+        HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+});
+
+// Cross-Cutting Services
+builder.Services.AddExceptionHandler<CustomExceptionHandler>();
+
+builder.Services.AddHealthChecks()
+    .AddNpgSql(builder.Configuration.GetConnectionString("Database")!)
+    .AddRedis(builder.Configuration.GetConnectionString("Redis")!);
+
+
+
 var app = builder.Build();
 
 app.MapCarter();
 // Configure the http request pipeline
-app.UseExceptionHandler(options => { });
+app.UseExceptionHandler(opts => { });
 app.MapHealthChecks("/health",
     new HealthCheckOptions
     {
